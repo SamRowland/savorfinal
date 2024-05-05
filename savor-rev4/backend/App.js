@@ -171,3 +171,109 @@ app.get("/user/username/:username", async (req, res) => {
             res.send({ error: 'An internal server error occurred' });
         }
     });
+
+    app.get("/search", async (req, res) => {
+        console.log("Is the request sent?",req.query)
+        const { ingredients } = req.query;
+        const ingredientList = ingredients.split(',').map(ingredient => ingredient.trim());
+        const ingredientListLowercase = ingredientList.map(ingredient => ingredient.toLowerCase());
+        console.log("Got ingredients",ingredientList);
+        try {
+          await client.connect();
+
+          const recipes = await db.collection("recipes").find().toArray();
+
+          // Filter recipes based on ingredientList
+          const recipeSearch = recipes.filter(recipe => {
+                // Convert each ingredient in the recipe to lowercase and check if any matches any ingredient in ingredientListLowercase
+                return recipe.ingredients.some(recipeIngredient =>
+                ingredientListLowercase.some(givenIngredient =>
+                    recipeIngredient.toLowerCase().includes(givenIngredient)
+                ));
+            });
+
+          // Sort recipes based on the number of matching ingredients
+            recipeSearch.sort((a, b) => {
+                const matchingIngredientsA = a.ingredients.filter(recipeIngredient =>
+                    ingredientListLowercase.some(givenIngredient =>
+                        recipeIngredient.toLowerCase().includes(givenIngredient)
+                    ));
+                const matchingIngredientsB = b.ingredients.filter(recipeIngredient =>
+                    ingredientListLowercase.some(givenIngredient =>
+                        recipeIngredient.toLowerCase().includes(givenIngredient)
+                    ));
+                console.log("A: ", matchingIngredientsA.length);
+                console.log("B: ", matchingIngredientsB.length);
+                return matchingIngredientsB.length - matchingIngredientsA.length;
+            });
+          console.log("Recipes are sorted", recipeSearch);
+        //   res.json(recipeSearch);
+          res.status(200).send(recipeSearch)
+        } catch (error) {
+            console.error('Search error:', error);
+            res.status(500).json({ message: 'Server Error' });
+        } finally {
+            await client.close();
+        }
+        });
+
+
+    app.get("/search", async (req, res) => {
+        console.log("Is the request sent?",req.query);
+        const { name } = req.query;
+        const nameList = name.split(' ').map(eachWord => eachWord.toLowerCase());
+        console.log("Got recipes",nameList);
+        try {
+          await client.connect();
+
+          const recipes = await db.collection("recipes").find().toArray();
+          const recipeSearch = [];
+
+          recipes.forEach((recipe) => {
+            const recipeNameWords = recipe.name.toLowerCase().split(" ");
+            const authorNameWords = recipe.author.toLowerCase().split(" ");
+            if (
+              recipeNameWords.some((word) => nameList.includes(word)) ||
+              authorNameWords.some((word) => nameList.includes(word))
+            ) {
+              const matchingWordsCount =
+                recipeNameWords.filter((word) => nameList.includes(word))
+                  .length +
+                authorNameWords.filter((word) => nameList.includes(word))
+                  .length;y
+              recipeSearch.push({ recipe, matchingWordsCount });
+            }
+          });
+
+          recipeSearch.sort(
+            (a, b) => b.matchingWordsCount - a.matchingWordsCount
+          );
+
+          const orderedRecipes = recipeSearch.map((entry) => entry.recipe);
+
+          // Return only ordered recipes
+          res.status(200).send(orderedRecipes); 
+        } catch (error) {
+            console.error('Search error:', error);
+            res.status(500).json({ message: 'Server Error' });
+        } finally {
+            await client.close();
+        }
+        });
+
+
+
+    app.get("/topPicks",async(req,res)=>{
+        try {
+            await client.connect();
+            const recipes = await db.collection("recipes").find().toArray();
+
+            recipes.sort((a, b) => {
+                return b.likes - a.likes;
+        });
+        res.status(200).send(recipes);
+        } catch(error){
+            console.error('Search error:', error);
+            res.status(500).send({ message: 'Server Error' });
+        }
+    })

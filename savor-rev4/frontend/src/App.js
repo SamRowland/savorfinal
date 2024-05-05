@@ -69,7 +69,7 @@ function App() {
               <a class="navbar-brand navbar-content" onClick={() => navigate('/')}>Savor</a>
               <ul class="navbar-nav">
                   <li class="nav-item">
-                      <a class="nav-link" href="#">Find Recipes</a>
+                      <a class="nav-link" onClick={() => navigate('/findRecipe')}>Find Recipes</a>
                   </li>
                   <li class="nav-item">
                       <a class="nav-link" onClick={(signedIn && toUploadRecipe || (!signedIn && toSignIn))}>Upload Recipes</a>
@@ -851,6 +851,100 @@ function App() {
     )
   }
 
+  const FindRecipe = () => {
+    const fetchTopPicks = () => {
+      return fetch('http://localhost:8081/topPicks')
+        .then(response => response.json())
+        .then(data => {
+          console.log("Top picks: ", data);
+          return data;
+        })
+        .catch(error => {
+          console.error('Error fetching top picks:', error);
+          return []; 
+        });
+    };
+  
+    const [searchQuery, setSearchQuery] = useState('');
+    const [recipeData, setRecipeData] = useState([]);
+  
+    useEffect(() => {
+      async function fetchData(){
+        try {
+          const data = await fetchTopPicks();
+          setRecipeData(data);
+          console.log(data);
+        } catch (error) {
+          console.error('Error fetching top picks:', error);
+          setRecipeData([]); // Set an empty array in case of error
+        }
+      }
+      fetchData();
+    }, []); 
+  
+    // console.log(recipeData);
+  
+    const searchByIngredients = () => {
+      axios.get(`http://localhost:8081/search?ingredients=${searchQuery}`)
+        .then(response => {
+          if (response.data && response.data.length > 0) {
+            setRecipeData(response.data);
+          } else {
+            console.error("No recipes found for the given ingredients.");
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching recipes:", error);
+        });
+    };
+
+  
+  
+    const loadUserRecipes = (recipeList) => {
+      return recipeList.map((curRecipe, index) => (
+        <div key={index} className="col-md-4 mb-4">
+          <div className="card">
+            <img src={curRecipe.image} className="card-img-top" alt={curRecipe.name} height={"300px"} />
+            <div className="card-body">
+              <h5 className="card-title">{curRecipe.name}</h5>
+              <p className="card-text">Preparation Time: {curRecipe.prepTime}</p>
+              <p className="card-text">Likes: {curRecipe.likes}</p>
+              <p className="card-text"><small className="text-body-secondary">Uploaded {curRecipe.uploadDate}</small></p>
+              <button className="btn btn-primary" onClick={() => toRecipe(curRecipe._id)}>View Recipe</button>
+            </div>
+          </div>
+        </div>
+      ));
+    };
+  
+    return (
+      <div>
+        <Navbar />
+        <div className="container">
+          <div className="row mt-4">
+            <div className="col-md-6 offset-md-3">
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Enter ingredients (comma-separated)"
+                />
+                <div className="input-group-append">
+                  <button className="btn btn-primary" type="button" onClick={searchByIngredients}>Search</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="row mt-4">
+          {loadUserRecipes(recipeData)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Routes>
       <Route path="/" element={<Home/>}/>
@@ -860,6 +954,7 @@ function App() {
       <Route path="/profile" element={<Profile/>}/>
       <Route path="/uploadRecipe" element={<UploadRecipe/>}/>
       <Route path="/recipe" element={<Recipe/>}/>
+      <Route path="/findRecipe" element = {<FindRecipe/>}/>
     </Routes>
   );
 }
