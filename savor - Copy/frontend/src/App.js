@@ -1,4 +1,5 @@
 import './App.css';
+import IngredientSearch from './IngredientSearch';
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css'; 
@@ -46,11 +47,14 @@ function App() {
               <a class="navbar-brand navbar-content" onClick={() => navigate('/')}>Savor</a>
               <ul class="navbar-nav">
                   <li class="nav-item">
-                      <a class="nav-link" href="#">Find Recipes</a>
+                      <a class="nav-link" onClick={() => navigate('/recipes')}>Find Recipes</a>
                   </li>
                   <li class="nav-item">
                       <a class="nav-link" href="#">Upload Recipes</a>
                   </li>
+                  {/* <li class="nav-item">
+                  <a class="nav-link active" href="./about.html">About</a>
+              </li> */} 
               </ul>
               <div class="navbar-nav align-right">
                   <li class="nav-item dropdown">
@@ -69,10 +73,19 @@ function App() {
                             <div>
                                 <li><a class="dropdown-item" onClick={viewProfile}>View Profile</a></li>
                                 <li><a class="dropdown-item" onClick={() => navigate('/signOut')}>Sign Out</a></li>
+                                
                             </div>  
                         }
                       </ul>
                   </li>
+              </div>
+
+              <div class="navbar-nav align-left">
+                  <form class="d-flex position-relative" role="search">
+                  {/* <input class="form-control me-2" type="search" id="input-box" placeholder="Search recipes" aria-label="Search" autocomplete="off"/> */}
+                  {/* <div class="result-box position-absolute top-100  z-index-1" style={0"width: 100%;"></div> */}
+                  <button className="btn justify-left" type="submit" id="search-box">Search</button>
+                </form>
               </div>
         </nav>
     )
@@ -439,6 +452,7 @@ function App() {
       {/* <Route path="/signOut" element={SignOut()}/> */}
       <Route path="/profile" element={Profile()}/>
       <Route path="/uploadRecipe" element={UploadRecipe()}/>
+      {/* <Route path="/recipes" element={IngredientSearch()}/> */}
     </Routes>
   );
 }

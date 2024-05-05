@@ -69,3 +69,23 @@ app.post("/createAccount", async (req, res) => {
             res.status(500).send({ error: 'An internal server error occurred' });
         }
 });
+
+app.get("/recipes", async(req, res) => {
+    try{
+        await client.connect();
+        const query = {};
+        const results = await db.collection("recipes").find(query).limit(100).toArray();
+        console.log(results);
+        res.status(200);
+        res.send(results);
+        // if(!result){
+        //     res.send("No data in the database").send(404);
+        // } else{
+        //     res.status(200).send(result);
+        // }
+    } catch (error){
+        console.error("An error occurred:", error);
+        res.status(500).send({ error: 'An internal server error occurred' });
+    }
+    
+})
