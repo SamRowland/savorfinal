@@ -69,10 +69,16 @@ function App() {
               <a class="navbar-brand navbar-content" onClick={() => navigate('/')}>Savor</a>
               <ul class="navbar-nav">
                   <li class="nav-item">
-                      <a class="nav-link" onClick={() => navigate('/findRecipe')}>Find Recipes</a>
+                      <a class="nav-link" onClick={() => navigate('/allRecipe')}>Recipes</a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link" onClick={() => navigate('/searchRecipe')}>Ingredients</a>
                   </li>
                   <li class="nav-item">
                       <a class="nav-link" onClick={(signedIn && toUploadRecipe || (!signedIn && toSignIn))}>Upload Recipes</a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link" onClick={()=> navigate('/about')}>About</a>
                   </li>
               </ul>
               <div class="navbar-nav align-right">
@@ -101,13 +107,70 @@ function App() {
     )
   }
 
-  // Work-in-progress
+  //New work
   const Home = () => {
-    return(
+    const fetchTopPicks = () => {
+      return fetch('http://localhost:8081/topPicks')
+        .then(response => response.json())
+        .then(data => {
+          console.log("Top picks: ", data);
+          return data;
+        })
+        .catch(error => {
+          console.error('Error fetching top picks:', error);
+          return []; 
+        });
+    };
+  
+    const [recipeData, setRecipeData] = useState([]);
+  
+    useEffect(() => {
+      async function fetchData() {
+        try {
+          const data = await fetchTopPicks();
+          setRecipeData(data);
+          console.log(data);
+        } catch (error) {
+          console.error('Error fetching top picks:', error);
+          setRecipeData([]); // Set an empty array in case of error
+        }
+      }
+      fetchData();
+    }, []); 
+  
+    return (
       <div>
-        <Navbar/>
+        <Navbar />
+        <div id="myCarousel" className="carousel slide mb-6" data-bs-ride="carousel">
+          <div className="carousel-inner">
+            {recipeData.slice(0, 3).map((recipe, index) => (
+              <div key={index} className={`carousel-item ${index === 0 ? 'active' : ''}`}>
+                <div className="d-flex justify-content-center align-items-center">
+                  <img className="-image" src={recipe.image} alt={recipe.name} style={{ width: '`1000px', height: '500px' }} />
+                </div>
+                  <div className="carousel-caption">
+                    <h1>{recipe.name}</h1>
+                    <p className="opacity-75">{recipe.description}</p>
+                    <p><a className="btn btn-lg btn-primary" onClick={() => toRecipe(recipe.id)}>Check Recipe!</a></p>
+                  </div>
+                </div>
+            ))}
+          </div>
+          <div className='carousel-control-prev'>
+          <button className="carousel-control-prev-icon" type="button" data-bs-target="#myCarousel" data-bs-slide="prev">
+            {/* <span className="carousel-control-prev-icon bt-violet"></span>
+            <span className="visually-hidden">Previous</span> */}
+          </button>
+          </div>
+          <div className='carousel-control-next'>
+          <button className="carousel-control-next-icon" type="button" data-bs-target="#myCarousel" data-bs-slide="next">
+            {/* <span className="carousel-control-next-icon bt-violet" aria-hidden="true"></span>
+            <span className="visually-hidden">Next</span> */}
+          </button>
+          </div>
+        </div>
       </div>
-    )
+    );
   }
 
   // Needs more Bootstrap elements
@@ -851,7 +914,121 @@ function App() {
     )
   }
 
+  //New work
   const FindRecipe = () => {
+    const fetchTopPicks = () => {
+      return fetch('http://localhost:8081/topPicks')
+        .then(response => response.json())
+        .then(data => {
+          console.log("Top picks: ", data);
+          return data;
+        })
+        .catch(error => {
+          console.error('Error fetching top picks:', error);
+          return []; 
+        });
+    };
+  
+    const [searchQuery, setSearchQuery] = useState('');
+    const [recipeData, setRecipeData] = useState([]);
+  
+    useEffect(() => {
+      async function fetchData(){
+        try {
+          const data = await fetchTopPicks();
+          setRecipeData(data);
+          console.log(data);
+        } catch (error) {
+          console.error('Error fetching top picks:', error);
+          setRecipeData([]); // Set an empty array in case of error
+        }
+      }
+      fetchData();
+    }, []); 
+  
+    // console.log(recipeData);
+
+
+    const searchRecipes = () =>{
+      axios.get(`http://localhost:8081/search?name=${searchQuery}`)
+      .then(response => {
+        if (response.data && response.data.length > 0) {
+          setRecipeData(response.data);
+        } else {
+          console.error("No recipes found for the given ingredients.");
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching recipes:", error);
+      });
+    };
+
+  
+  
+    const loadUserRecipes = (recipeList) => {
+      return recipeList.map((curRecipe, index) => (
+        <div key={index} className="col-md-4 mb-4">
+          <div className="card">
+            <img src={curRecipe.image} className="card-img-top" alt={curRecipe.name} height={"300px"} />
+            <div className="card-body">
+              <h5 className="card-title">{curRecipe.name}</h5>
+              <p className="card-text">Preparation Time: {curRecipe.prepTime}</p>
+              <p className="card-text">Likes: {curRecipe.likes}</p>
+              <p className="card-text"><small className="text-body-secondary">Uploaded {curRecipe.uploadDate}</small></p>
+              <button className="btn btn-primary" onClick={() => toRecipe(curRecipe._id)}>View Recipe</button>
+            </div>
+          </div>
+        </div>
+      ));
+    };
+
+  
+    return (
+      <div>
+        <Navbar />
+        <div className="container">
+          <div className="row mt-4">
+          <div className="col-md-6 offset-md-3">
+          {/* Search by Name and Author */}
+          <div className="input-group mb-3">
+            <input
+              type="text"
+              className="form-control"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by Name or Author"
+            />
+            <div className="input-group-append">
+              <button className="btn btn-primary" type="button" onClick={searchRecipes}>Search</button>
+            </div>
+          </div>
+          
+          {/* Search by Ingredients */}
+          {/* <div className="input-group mb-3">
+            <input
+              type="text"
+              className="form-control"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by Ingredients (comma-separated)"
+            />
+            <div className="input-group-append">
+              <button className="btn btn-primary" type="button" onClick={searchByIngredients}>Search</button>
+            </div>
+          </div> */}
+        </div>
+      </div>
+      <div className="row mt-4">
+        {/* Display search results here */}
+        {loadUserRecipes(recipeData)}
+      </div>
+        </div>
+      </div>
+    );
+  };
+
+  //New Work
+  const SearchRecipe = () => {
     const fetchTopPicks = () => {
       return fetch('http://localhost:8081/topPicks')
         .then(response => response.json())
@@ -897,7 +1074,6 @@ function App() {
           console.error("Error fetching recipes:", error);
         });
     };
-
   
   
     const loadUserRecipes = (recipeList) => {
@@ -916,34 +1092,114 @@ function App() {
         </div>
       ));
     };
+
   
     return (
       <div>
         <Navbar />
         <div className="container">
           <div className="row mt-4">
-            <div className="col-md-6 offset-md-3">
-              <div className="input-group">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Enter ingredients (comma-separated)"
-                />
-                <div className="input-group-append">
-                  <button className="btn btn-primary" type="button" onClick={searchByIngredients}>Search</button>
-                </div>
-              </div>
+          <div className="col-md-6 offset-md-3">
+          {/* Search by Name and Author
+          <div className="input-group mb-3">
+            <input
+              type="text"
+              className="form-control"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by Name or Author"
+            />
+            <div className="input-group-append">
+              <button className="btn btn-primary" type="button" onClick={searchRecipes}>Search</button>
+            </div>
+          </div> */}
+          
+          {/* Search by Ingredients */}
+          <div className="input-group mb-3">
+            <input
+              type="text"
+              className="form-control"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by Ingredients (comma-separated)"
+            />
+            <div className="input-group-append">
+              <button className="btn btn-primary" type="button" onClick={searchByIngredients}>Search</button>
             </div>
           </div>
-          <div className="row mt-4">
-          {loadUserRecipes(recipeData)}
-          </div>
+        </div>
+      </div>
+      <div className="row mt-4">
+        {/* Display search results here */}
+        {loadUserRecipes(recipeData)}
+      </div>
         </div>
       </div>
     );
   };
+
+  const About = () => {
+    const [membersList, setMembersList] = useState([
+      {
+        "name": "Sam Rowland",
+        "major": "Computer Science",
+        "imagesrc": "https://github.com/SamRowland/savorfinal/blob/main/images/sam%20rowland.jpg?raw=true",
+        "imagewidth": 350,
+        "imageheight": 500,
+        "description": "I’m Sam Rowland, a sophomore majoring in computer science. In previous classes, I have learned to program using Python, Java, and many general programming skills, such as working with objects, functions, and data types."
+    },
+    {
+        "name": "Saeshu Karthika",
+        "major": "Computer Science",
+        "imagesrc": "https://github.com/SamRowland/savorfinal/blob/main/images/saeshu.jpg?raw=true",
+        "description": "I’m Saeshu Karthika, a sophomore majoring in Computer Science. My current focus has been on learning Java and Python programming languages. Additionally, as a minor in Data Science, I am delving into the creation of models from data, as well as their testing and training, primarily using Python."
+    }
+    ]);
+  
+    console.log(membersList);
+
+    return (
+      <div>
+        <Navbar/>
+      
+        {/* <div id="about">
+        <div class="row">
+          {membersList.map((member, index) => (
+            <div key={index} className="col-md-6">
+              <div className="member">
+                <div className="image d-flex">
+                  <img src={member.imagesrc} alt={member.name} width="360px" height="380px" />
+                </div>
+                <div className="text mt-3">
+                  <h2>{member.name}</h2>
+                  <p>{member.major}</p>
+                  <p>{member.description}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+      </div>
+      </div> */}
+       <div id="about" className="container">
+          <div className="row">
+            {membersList.map((member, index) => (
+              <div key={index} className="col-md-6">
+                <div className="card" style={{ width: '30rem', height:'45rem' }}>
+                  <img src={member.imagesrc} alt={member.name} className="card-img-top" height="450px" />
+                  <div className="card-body">
+                    <h5 className="card-title">{member.name}</h5>
+                    <p className="card-text">{member.major}</p>
+                    <p className="card-text">{member.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+    </div>
+    );
+  };
+  
 
   return (
     <Routes>
@@ -954,7 +1210,9 @@ function App() {
       <Route path="/profile" element={<Profile/>}/>
       <Route path="/uploadRecipe" element={<UploadRecipe/>}/>
       <Route path="/recipe" element={<Recipe/>}/>
-      <Route path="/findRecipe" element = {<FindRecipe/>}/>
+      <Route path="/allRecipe" element = {<FindRecipe/>}/>
+      <Route path="/searchRecipe" element={<SearchRecipe/>}/>
+      <Route path="/about" element ={<About />}/>
     </Routes>
   );
 }
